@@ -8,6 +8,7 @@ from streamlit_pandas_profiling import st_profile_report
 # setting app's title, icon & layout
 st.set_page_config(page_title="Github Scraper", page_icon="🎯")
 
+
 def scrape_data(user_name):
     url = f"https://github.com/{user_name}?tab=repositories"
     page = requests.get(url)
@@ -68,9 +69,55 @@ def scrape_data(user_name):
     repo_info = pd.DataFrame(repo_info)
     return info, repo_info
 
+
 def main():
     # display app header
-    st.header("Header")
+    st.header("Github Scraper")
+    if username := st.text_input("Enter your github username : "):
+        try:
+            info, repo_info = scrape_data(username)
+
+            for key, value in info.items():
+                if key != "image_url":
+                    st.sidebar.write(
+                        """
+                        {} : {}
+                        """.format(
+                            key, value
+                        )
+                    )
+                else:
+                    st.sidebar.image(value)
+            st.subheader("Recent Repositories")
+            with st.expander("CSV Format"):
+                st.dataframe(repo_info)
+                st.download_button(
+                    label="Download data as CSV",
+                    data=repo_info.to_csv(),
+                    file_name="df.csv",
+                    mime="text/csv",
+                )
+            with st.expander("JSON Format"):
+                st.json(repo_info.to_json())
+                st.download_button(
+                    label="Download data as JSON",
+                    data=repo_info.to_csv(),
+                    file_name="df.json",
+                    mime="text/json",
+                )
+            with st.expander("HTML Report"):
+                report = ProfileReport(repo_info)
+                st_profile_report(report)
+                st.download_button(
+                    label="Download HTML report",
+                    data=report.to_html(),
+                    file_name="df_report.html",
+                    mime="text/html",
+                )
+        except Exception:
+            st.subheader("User doesn't exist")
+    else:
+        st.info("Please, Enter a github profile username...")
 
 
 if __name__ == "__main__":
